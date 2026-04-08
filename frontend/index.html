@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRM Academic Repository</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gcDark: '#202124',
+                        gcSurface: '#2d2e30',
+                        gcBorder: '#5f6368',
+                        gcBlue: '#8ab4f8',
+                        textPrimary: '#e8eaed',
+                        textSecondary: '#9aa0a6'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { transition: background-color 0.5s ease; overflow-x: hidden; }
+        .fade-in { animation: fadeIn 0.3s ease-in forwards; }
+        .slide-up { opacity: 0; animation: slideUp 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        #dynamic-bg {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at 50% 50%, #202124 0%, #121212 100%);
+            opacity: 0.2; transition: background 0.6s ease; z-index: -1; pointer-events: none;
+        }
+        .subject-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .subject-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+        .swiss-knife-grid { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease-in-out; }
+        .swiss-knife-grid.open { grid-template-rows: 1fr; }
+        .swiss-knife-inner { overflow: hidden; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #202124; }
+        ::-webkit-scrollbar-thumb { background: #5f6368; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gcDark text-textPrimary font-sans min-h-screen flex flex-col">
+
+    <div id="dynamic-bg"></div>
+    <div id="toast-container" class="fixed bottom-4 left-4 z-50 flex flex-col gap-2"></div>
+
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm fade-in">
+        <div id="modal-content" class="bg-gcSurface border border-gcBorder p-8 rounded-xl shadow-2xl w-[450px] transform transition-transform scale-95"></div>
+    </div>
+
+    <div id="view-auth" class="absolute inset-0 z-40 flex items-center justify-center bg-gcDark fade-in">
+        <div class="bg-gcSurface p-10 rounded-xl shadow-2xl w-[400px] border border-gcBorder relative overflow-hidden">
+            <div class="flex justify-center mb-4">
+                <div class="w-16 h-16 bg-gcBlue rounded-full flex items-center justify-center text-gcDark text-2xl font-bold tracking-wider">SRM</div>
+            </div>
+            <h1 id="auth-title" class="text-2xl font-medium text-center mb-6">Academic Portal</h1>
+            
+            <div class="flex justify-center mb-6 border-b border-gcBorder pb-4">
+                <button onclick="window.App.toggleAuthMode('login')" id="tab-login" class="px-4 py-2 text-gcBlue border-b-2 border-gcBlue font-medium transition">Sign In</button>
+                <button onclick="window.App.toggleAuthMode('signup')" id="tab-signup" class="px-4 py-2 text-textSecondary hover:text-white border-b-2 border-transparent transition">Register</button>
+            </div>
+
+            <form id="form-login" onsubmit="window.App.login(event)" class="flex flex-col gap-4 fade-in">
+                <div class="flex bg-gcDark p-1 rounded-lg border border-gcBorder">
+                    <label class="flex-1 text-center cursor-pointer">
+                        <input type="radio" name="login_role" value="teacher" class="peer hidden" onchange="window.App.toggleLoginFields()" checked>
+                        <div class="py-2 text-sm text-textSecondary peer-checked:bg-gcSurface peer-checked:text-white rounded-md transition font-medium">Faculty</div>
+                    </label>
+                    <label class="flex-1 text-center cursor-pointer">
+                        <input type="radio" name="login_role" value="student" class="peer hidden" onchange="window.App.toggleLoginFields()">
+                        <div class="py-2 text-sm text-textSecondary peer-checked:bg-gcSurface peer-checked:text-white rounded-md transition font-medium">Student</div>
+                    </label>
+                </div>
+                <input type="text" id="login-id" placeholder="Faculty ID (e.g., F1...)" class="w-full px-4 py-3 bg-transparent border border-gcBorder rounded focus:border-gcBlue focus:outline-none transition" required>
+                <div>
+                    <input type="password" id="login-pass" placeholder="Secure PIN" class="w-full px-4 py-3 bg-transparent border border-gcBorder rounded focus:border-gcBlue focus:outline-none transition" required>
+                    <p id="login-hint" class="text-xs text-textSecondary mt-2">*Faculty: Use your secure 4-digit PIN.</p>
+                </div>
+                <button type="submit" class="bg-gcBlue text-gcDark font-medium px-6 py-3 rounded mt-2 hover:bg-blue-400 transition shadow-lg">Sign In</button>
+            </form>
+
+            <form id="form-signup" onsubmit="window.App.signup(event)" class="hidden flex-col gap-4 fade-in">
+                <div class="flex bg-gcDark p-1 rounded-lg border border-gcBorder">
+                    <label class="flex-1 text-center cursor-pointer">
+                        <input type="radio" name="signup_role" value="teacher" class="peer hidden" onchange="window.App.toggleSignupFields()" checked>
+                        <div class="py-2 text-sm text-textSecondary peer-checked:bg-gcSurface peer-checked:text-white rounded-md transition font-medium">Faculty</div>
+                    </label>
+                    <label class="flex-1 text-center cursor-pointer">
+                        <input type="radio" name="signup_role" value="student" class="peer hidden" onchange="window.App.toggleSignupFields()">
+                        <div class="py-2 text-sm text-textSecondary peer-checked:bg-gcSurface peer-checked:text-white rounded-md transition font-medium">Student</div>
+                    </label>
+                </div>
+                <input type="text" id="reg-id" placeholder="Faculty ID (e.g., F1...)" class="w-full px-4 py-2 bg-transparent border border-gcBorder rounded focus:border-gcBlue focus:outline-none text-sm transition" required>
+                <input type="text" id="reg-name" placeholder="Full Name" class="w-full px-4 py-2 bg-transparent border border-gcBorder rounded focus:border-gcBlue focus:outline-none text-sm transition" required>
+                <input type="text" id="reg-dept" placeholder="Department (e.g., CSE)" class="w-full px-4 py-2 bg-transparent border border-gcBorder rounded focus:border-gcBlue focus:outline-none text-sm transition" required>
+                <input type="password" id="reg-pin" placeholder="Secure PIN" class="w-full px-4 py-2 bg-transparent border border-gcBorder rounded focus:border-gcBlue focus:outline-none text-sm transition block" required>
+                <button type="submit" class="bg-gcSurface border border-gcBorder text-white font-medium px-6 py-3 rounded mt-2 hover:bg-gcBorder transition shadow-lg">Create Account</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="view-app" class="hidden absolute inset-0 z-30 flex flex-col h-screen overflow-hidden">
+        <header class="h-16 border-b border-gcBorder flex items-center justify-between px-6 bg-gcDark shrink-0 z-20 shadow-sm">
+            <div class="flex items-center gap-4 cursor-pointer" onclick="window.App.router.navigate('dashboard')">
+                <div id="nav-avatar" class="w-9 h-9 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white shadow-sm">U</div>
+                <div class="hidden sm:block">
+                    <p id="nav-username" class="font-medium text-sm leading-tight">User Name</p>
+                    <p id="nav-role" class="text-xs text-textSecondary uppercase tracking-wider leading-tight">Role</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-6">
+                <button onclick="window.App.syncData(false)" class="text-textSecondary hover:text-white transition" title="Sync with Database">
+                    <span class="material-symbols-outlined" id="sync-icon">sync</span>
+                </button>
+                <button onclick="window.App.router.navigate('dashboard')" class="text-textSecondary hover:text-white transition" title="Home">
+                    <span class="material-symbols-outlined">home</span>
+                </button>
+                <button onclick="window.App.toggleMenu()" class="text-textSecondary hover:text-white transition" title="Menu">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+            </div>
+        </header>
+
+        <div id="side-menu" class="fixed top-16 right-0 w-80 h-[calc(100vh-4rem)] bg-gcSurface border-l border-gcBorder z-40 shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300">
+            <div class="p-6 border-b border-gcBorder bg-gcDark/50 flex items-center gap-3">
+                <span class="text-2xl">🎓</span>
+                <h3 id="menu-greeting" class="text-xl font-medium truncate text-white">Hi, User</h3>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+                <div class="text-xs text-textSecondary uppercase tracking-wider mb-2 mt-2 px-3">1. All Subjects</div>
+                <div id="sidebar-dynamic-links" class="flex flex-col gap-1 mb-4"></div>
+
+                <button onclick="window.App.ui.showToast('Bug reported (Request generated).', 'info'); window.App.toggleMenu()" class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gcDark text-rose-400 transition text-left font-medium">
+                    <span class="material-symbols-outlined">bug_report</span> 2. Report a Bug
+                </button>
+
+                <button onclick="window.App.openEditModal(); window.App.toggleMenu()" class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gcDark text-textPrimary transition text-left font-medium" id="menu-btn-edit">
+                    <span class="material-symbols-outlined">edit</span> 3. Edit Link
+                </button>
+
+                <button onclick="window.App.router.navigate('requests'); window.App.toggleMenu()" class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gcDark text-textPrimary transition text-left font-medium">
+                    <span class="material-symbols-outlined">assignment</span> 4. Requests
+                </button>
+
+                <hr class="border-gcBorder my-4 mx-3">
+                <button onclick="window.App.logout()" class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gcDark text-textSecondary hover:text-white transition text-left mt-auto">
+                    <span class="material-symbols-outlined">logout</span> Sign Out
+                </button>
+            </nav>
+        </div>
+
+        <main id="main-outlet" class="flex-1 overflow-y-auto p-6 relative z-10 scroll-smooth"></main>
+    </div>
+
+    <script type="module" src="/static/app.js"></script>
+</body>
+</html>

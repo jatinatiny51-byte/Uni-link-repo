@@ -27,10 +27,14 @@ class DatabaseConnectionPool:
         }
 
         try:
-            self._pool = mysql.connector.pooling.MySQLConnectionPool(
-                pool_name="edu_pool",
+            self.pool = mysql.connector.pooling.MySQLConnectionPool(
+                pool_name="srm_master_pool",
                 pool_size=5,
-                **self.config
+                host="127.0.0.1",
+                port=3307,
+                user="root",
+                password="",
+                database="srm_portal_db"
             )
             self._initialized = True
         except mysql.connector.Error as e:
@@ -46,3 +50,4 @@ class DatabaseConnectionPool:
             return conn
         except mysql.connector.Error as e:
             raise Exception(f"Connection Retrieval Failed: {e}")
+

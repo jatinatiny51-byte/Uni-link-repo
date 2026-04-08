@@ -3,8 +3,8 @@ import mysql.connector
 
 # --- UPDATE YOUR CREDENTIALS HERE ---
 db_config = {
-    "localhost": "127.0.0.1",
-    "user": "root",
+    "localhost": "",
+    "user": "",
     "password": "",  # Change if your local DB password differs
 }
 

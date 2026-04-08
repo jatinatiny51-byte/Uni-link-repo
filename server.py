@@ -1,1 +1,38 @@
-import os\nimport subprocess\n\ndef start_mysql():\n    try:\n        # Start the MySQL service\n        subprocess.run(['sc', 'start', 'MySQL80'], check=True)\n        print('MySQL80 service started successfully.')\n    except subprocess.CalledProcessError as e:\n        print(f'Failed to start MySQL80 service: {e}')\n\n# Start MySQL service before running the FastAPI server\nif __name__ == '__main__':\n    start_mysql()\n    # Here you would start your FastAPI server, for example using uvicorn\n    # subprocess.run(['uvicorn', 'your_fastapi_file:app', '--host', '0.0.0.0', '--port', '8000'])\n
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+import mysql.connector
+
+app = FastAPI()
+
+# MySQL Connection
+
+connection = mysql.connector.connect(
+    host='localhost',
+    user='your_username',
+    password='your_password',
+    database='your_database',
+    autocommit=True
+)
+
+@app.on_event("startup")
+def startup_event():
+    # Code to load data or perform initialization
+    pass
+
+@app.on_event("shutdown")
+def shutdown_event():
+    connection.close()
+
+# Frontend loading
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    return "<html><body><h1>Hello, FastAPI</h1></body></html>"
+
+# Backend API example
+@app.get("/api/data")
+async def read_data():
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM your_table")
+    results = cursor.fetchall()
+    return results
